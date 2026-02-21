@@ -7,7 +7,7 @@ class SignalPipeline:
         self.repo_path = repo_path
         self.extractors = [
             CommitEvolutionExtractor(repo_path),
-            CodeStructureExtractor(repo_path)
+            CodeStructureExtractor(repo_path, debug=True)
         ]
 
     def run(self):

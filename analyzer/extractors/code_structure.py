@@ -8,8 +8,9 @@ class CodeStructureExtractor:
         ".c", ".cs", ".go", ".rs", ".php"
     }
 
-    def __init__(self, repo_path):
+    def __init__(self, repo_path, debug=False):
         self.repo_path = repo_path
+        self.debug = debug
 
     def extract(self):
         file_line_counts = []
@@ -48,9 +49,22 @@ class CodeStructureExtractor:
             0.2 * structure_deficiency
         )
 
-        return {
+        result = {
             "inconsistency_score": round(self._clamp(inconsistency_score, 0, 1), 3)
         }
+
+        if self.debug:
+            result["structure_debug"] = {
+                "total_lines": total_lines,
+                "file_count": file_count,
+                "largest_ratio": round(largest_ratio, 3),
+                "dominance_score": round(dominance_score, 3),
+                "gini_score": round(gini_score, 3),
+                "structure_deficiency": round(structure_deficiency, 3),
+                "expected_files_sqrt": round(expected_files, 3)
+            }
+
+        return result
 
     def _count_lines(self, file_path):
         try:
