@@ -1,52 +1,44 @@
-import sys
 import os
+from analyzer.core.fetcher import RepoFetcher
+from analyzer.core.signal_pipeline import SignalPipeline
+from module2_engine import Module2Engine, Module2Input
 
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+REPO_NAME = "intro-to-git-github-Akhil242005"
+CLONE_URL = "https://github.com/Akhil242005/intro-to-git-github-Akhil242005.git"
+COMMIT_SHA = None
+
+
+GITHUB_PAT = os.getenv("GITHUB_PAT")
+
+if not GITHUB_PAT:
+    raise ValueError("GITHUB_PAT environment variable not set")
+
+
+fetcher = RepoFetcher(GITHUB_PAT)
+path = fetcher.fetch(REPO_NAME, CLONE_URL, COMMIT_SHA)
+
+print("Repository fetched at:", path)
+
+
+pipeline = SignalPipeline(path)
+signal_output = pipeline.run()
+
+print("Extracted Signals:", signal_output)
+
+
+engine = Module2Engine()
+
+module_input = Module2Input(
+    entity_id="LOCAL_TEST",
+    attributes=signal_output["attributes"],
+    context={"priority_level": "medium"},
+    meta={"completeness": 1.0, "source_confidence": 1.0}
 )
 
-from core.fetcher import RepoFetcher
-from extractors.commit_evolution import CommitEvolutionExtractor
-from module2_engine import evaluate_entity  # adjust if function name differs
+result = engine.evaluate(module_input)
 
-if __name__ == "__main__":
-    GITHUB_PAT = os.getenv("GITHUB_PAT")
-
-    # TEMP test values — replace with a real repo
-    REPO_NAME = "intro-to-git-github-Akhil242005"
-    CLONE_URL = "https://github.com/CorrusOfficial/intro-to-git-github-Akhil242005"
-    COMMIT_SHA = "main"
-
-    fetcher = RepoFetcher(GITHUB_PAT)
-    path = fetcher.fetch(REPO_NAME, CLONE_URL, COMMIT_SHA)
-
-    print("Repository fetched at:", path)
-
-    # Sanity checks
-    print("Files in repo root:")
-    print(os.listdir(path))
-
-    extractor = CommitEvolutionExtractor(path)
-    result = extractor.extract()
-
-    print("\nCommit Evolution Analysis:")
-    print(result)
-
-
-module2_input = {
-    "entity_id": REPO_NAME,
-    "attributes": {
-        "reliability_score": result["reliability_score"]
-    },
-    "context": {
-        "priority_level": "medium"
-    },
-    "meta": {
-        "source_confidence": 0.8
-    }
-}
-
-decision = evaluate_entity(module2_input)
-
-print("\nModule 2 Decision:")
-print(decision)
+print("\nFinal Score:", result.score)
+print("Band:", result.band)
+print("Confidence:", result.confidence)
+print("Reasons:", result.reasons)
